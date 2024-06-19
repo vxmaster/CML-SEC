@@ -1,0 +1,157 @@
+IPSec Configuration
+
+###R1 
+
+
+
+
+interface GigabitEthernet1
+ ip address 100.10.10.2 255.255.255.252
+ negotiation auto
+ no mop enabled
+ no mop sysid
+end
+
+interface Loopback10
+ ip address 10.1.0.1 255.255.255.0
+interface Loopback11
+ ip address 10.1.1.1 255.255.255.0
+
+ ip route 0.0.0.0 0.0.0.0 100.10.10.1 name default
+
+> Phase 1
+
+crypto isakmp policy 10
+ encryption 3des
+ hash md5
+ authentication pre-share
+ group 2
+crypto isakmp key 0x0 address 100.20.20.2 
+
+> Phase 2 
+Crypto ipsec transform-set R1toR2 esp-3des esp-sha-hmac 
+(mode tunnel)
+
+> Phase 3 Match traffic to ACL
+
+ip access-list extended 100 
+10 permit ip 10.1.0.0 0.0.1.255 10.1.2.0 0.0.1.255
+
+> Phase 4 Create Crypto Map
+
+interface GigabitEthernet1
+ ip address 100.10.10.2 255.255.255.252
+ negotiation auto
+ no mop enabled
+ no mop sysid
+ crypto map R1toR2MAP
+
+crypto map R1toR2MAP 10 ipsec-isakmp 
+ set peer 100.20.20.2
+ set transform-set R1toR2 
+ match address 100 (accesslist number)
+
+> Phase 5 Crypto Map into the uplink interface
+
+
+###R2
+
+
+
+
+interface GigabitEthernet2
+ ip address 100.20.20.2 255.255.255.0
+ negotiation auto
+ no mop enabled
+ no mop sysid
+end
+
+interface Loopback12
+ ip address 10.1.2.1 255.255.255.0
+interface Loopback13
+ ip address 10.1.3.1 255.255.255.0
+
+ip route 0.0.0.0 0.0.0.0 100.20.20.1 name default
+
+> Phase 1
+
+crypto isakmp policy 10
+ encryption 3des
+ hash md5
+ authentication pre-share
+ group 2
+crypto isakmp key 0x0 address 100.10.10.2 
+
+> Phase 2 
+Crypto ipsec transform-set R2toR1 esp-3des esp-sha-hmac 
+(mode tunnel)
+
+> Phase 3 Match traffic to ACL
+
+access-list 100 permit  ip 10.1.2.0 0.0.1.255 10.1.0.0 0.0.1.255 log
+
+> Phase 4 Create Crypto Map
+
+crypto map R1toR2MAP 10 ipsec-isakmp 
+ set peer 100.20.20.2
+ set transform-set R1toR2 
+ match address 100 (accesslist number)
+
+> Phase 5 Crypto Map into the uplink interface
+
+interface GigabitEthernet2
+ ip address 100.20.20.2 255.255.255.0
+ negotiation auto
+ no mop enabled
+ no mop sysid
+ crypto map R2toR1MAP
+
+###R3 (Just give ipv4 address in interface)
+interface GigabitEthernet1
+ ip address 100.10.10.1 255.255.255.252
+ negotiation auto
+ no mop enabled
+ no mop sysid
+
+ interface GigabitEthernet2
+ ip address 100.20.20.1 255.255.255.252
+ negotiation auto
+ no mop enabled
+ no mop sysid
+end
+
+
+##Check your Connection and IPSecVPN
+R1#ping 100.20.20.2
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 100.20.20.2, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 2/2/3 ms
+
+R1#ping 10.1.2.1 source 10.1.0.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 10.1.2.1, timeout is 2 seconds:
+Packet sent with a source address of 10.1.0.1 
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 3/3/4 ms
+
+
+R2#ping 10.1.1.1 source 10.1.3.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 10.1.1.1, timeout is 2 seconds:
+Packet sent with a source address of 10.1.3.1 
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 2/8/31 ms
+R2#
+
+show ipsec sa
+R2#show crypto isakmp peers 
+Peer: 100.10.10.2 Port: 500 Local: 100.20.20.2
+ Phase1 id: 100.10.10.2
+
+R2#show crypto isakmp sa 
+IPv4 Crypto ISAKMP SA
+dst             src             state          conn-id status
+100.20.20.2     100.10.10.2     QM_IDLE           1001 ACTIVE
+
+IPv6 Crypto ISAKMP SA
