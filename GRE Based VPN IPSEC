@@ -31,7 +31,7 @@ crypto isakmp policy 10
  group 2
 crypto isakmp key 0x0 address 100.20.20.2    
 crypto ipsec transform-set R1toR2 esp-3des esp-sha-hmac 
- mode tunnel
+ mode tunnel (Recommenede to change transport port)
 crypto ipsec profile R1toR2PROFILE
  set transform-set R1toR2 
 
@@ -73,7 +73,7 @@ crypto isakmp policy 10
  group 2
 crypto isakmp key 0x0 address 100.20.20.2    
 crypto ipsec transform-set R1toR2 esp-3des esp-sha-hmac 
- mode tunnel
+ mode tunnel (Recommenede to change transport port)
 crypto ipsec profile R1toR2PROFILE
  set transform-set R1toR2 
 
