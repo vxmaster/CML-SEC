@@ -1,0 +1,87 @@
+NATIVE IPsec Tunnel-Based VPN - IPSEC Side to Side
+
+###R1
+
+R1#show ip interface brief 
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       100.10.10.2     YES manual up                    up      
+GigabitEthernet2       unassigned      YES unset  administratively down down    
+GigabitEthernet3       unassigned      YES unset  administratively down down    
+GigabitEthernet4       unassigned      YES unset  administratively down down    
+Loopback11             10.1.1.1        YES manual up                    up      
+Loopback12             10.1.2.1        YES manual up                    up      
+Tunnel1                172.16.16.1     YES manual up                    up 
+
+interface Tunnel1
+ description R1toR2
+ ip address 172.16.16.1 255.255.255.252
+ tunnel source 100.10.10.2
+ tunnel destination 100.20.20.2
+
+
+ip route 0.0.0.0 0.0.0.0 100.10.10.1 name default
+ip route 10.2.1.0 255.255.255.0 172.16.16.2 name R2
+ip route 10.2.2.0 255.255.255.0 172.16.16.2 name R2
+
+>>IPSEC
+crypto isakmp policy 10
+ encryption 3des
+ hash md5
+ authentication pre-share
+ group 2
+crypto isakmp key 0x0 address 100.20.20.2    
+crypto ipsec transform-set R1toR2 esp-3des esp-sha-hmac 
+ mode tunnel
+crypto ipsec profile R1toR2PROFILE
+ set transform-set R1toR2 
+
+ interface Tunnel1
+ description R1toR2
+ ip address 172.16.16.1 255.255.255.252
+ tunnel source 100.10.10.2
+ tunnel destination 100.20.20.2
+ tunnel mode ipsec ipv4
+ tunnel protection ipsec profile R1toR2PROFILE
+end
+
+###R2
+R2#show ip inte br
+R2#show ip inte brief 
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       unassigned      YES unset  administratively down down    
+GigabitEthernet2       100.20.20.2     YES manual up                    up      
+GigabitEthernet3       unassigned      YES unset  administratively down down    
+GigabitEthernet4       unassigned      YES unset  administratively down down    
+Loopback21             10.2.1.1        YES manual up                    up      
+Loopback22             10.2.2.1        YES manual up                    up      
+Tunnel2                172.16.16.2     YES manual up                    up      
+
+interface Tunnel2
+ description R2toR1
+ ip address 172.16.16.2 255.255.255.252
+ tunnel source 100.20.20.2
+ tunnel destination 100.10.10.2
+
+ip route 0.0.0.0 0.0.0.0 100.20.20.1 name default
+ip route 10.1.1.0 255.255.255.0 172.16.16.1 name R1
+ip route 10.1.2.0 255.255.255.0 172.16.16.1 name R1
+
+>>IPSEC
+crypto isakmp policy 10
+ encryption 3des
+ hash md5
+ authentication pre-share
+ group 2
+crypto isakmp key 0x0 address 100.20.20.2    
+crypto ipsec transform-set R1toR2 esp-3des esp-sha-hmac 
+ mode tunnel
+crypto ipsec profile R1toR2PROFILE
+ set transform-set R1toR2 
+
+ interface Tunnel2
+ description R2toR1
+ ip address 172.16.16.2 255.255.255.252
+ tunnel source 100.20.20.2
+ tunnel destination 100.10.10.2
+ tunnel mode ipsec ipv4
+ tunnel protection ipsec profile R2toR1PROFILE 
