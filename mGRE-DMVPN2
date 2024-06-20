@@ -1,0 +1,150 @@
+mGRE-DMVPN2
+
+###R3
+
+R3#show ip interface br 
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet2       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet3       100.1.3.2       YES NVRAM  up                    up      
+GigabitEthernet4       unassigned      YES NVRAM  administratively down down    
+Loopback1              10.1.3.1        YES NVRAM  up                    up      
+Tunnel1                192.168.1.3     YES NVRAM  up                    up
+
+
+interface Tunnel1
+ description DMVPN-CENTER
+ ip address 192.168.1.3 255.255.255.0
+ no ip redirects
+ ip nhrp network-id 10
+ ip nhrp server-only
+ tunnel source 100.1.3.2
+ tunnel mode gre multipoint
+ tunnel key 1984
+end
+
+crypto isakmp policy 10
+ encryption 3des
+ hash md5
+ authentication pre-share
+ group 2
+ lifetime 7200
+crypto isakmp key 0x0 address 0.0.0.0        
+crypto ipsec transform-set R3toDMVPN esp-3des esp-sha-hmac 
+ mode transport
+crypto ipsec profile R3toDMVPN
+ set transform-set R3toDMVPN 
+
+ ###R1
+
+R1#show ip interface brief 
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       100.1.1.2       YES NVRAM  up                    up      
+GigabitEthernet2       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet3       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet4       unassigned      YES NVRAM  administratively down down    
+Loopback1              10.1.1.1        YES NVRAM  up                    up      
+Tunnel1                192.168.1.1     YES NVRAM  up                    up   
+
+crypto isakmp policy 10
+ encryption 3des
+ hash md5 
+ authentication pre-share
+ group 2
+crypto isakmp key 0x0 address 0.0.0.0        
+crypto ipsec transform-set R1toDMVPN esp-3des esp-sha-hmac 
+ mode transport
+crypto ipsec profile R1toDMVPN
+ set transform-set R1toDMVPN 
+
+
+ interface Tunnel1
+ description DMVPN-CENTER
+ ip address 192.168.1.3 255.255.255.0
+ no ip redirects
+ ip nhrp authentication cisco
+ ip nhrp network-id 10
+ ip nhrp server-only
+ tunnel source 100.1.3.2
+ tunnel mode gre multipoint
+ tunnel key 1984
+ tunnel protection ipsec profile R3toDMVPN
+end
+
+###R2
+
+R2#show ip interface brief 
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet2       100.1.2.2       YES NVRAM  up                    up      
+GigabitEthernet3       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet4       unassigned      YES NVRAM  administratively down down    
+Loopback1              10.1.2.1        YES NVRAM  up                    up      
+Tunnel1                192.168.1.2     YES NVRAM  up                    up  
+
+
+crypto isakmp policy 10
+ encryption 3des
+ hash md5
+ authentication pre-share
+ group 2
+crypto isakmp key 0x0 address 0.0.0.0        
+crypto ipsec transform-set R2toDMVPN esp-3des esp-sha-hmac 
+ mode transport
+crypto ipsec profile R2toDMVPN
+ set transform-set R2toDMVPN 
+interface Tunnel1
+ ip address 192.168.1.2 255.255.255.0
+ no ip redirects
+ ip nhrp authentication cisco
+ ip nhrp map 192.168.1.3 100.1.3.2
+ ip nhrp map multicast 100.1.3.2
+ ip nhrp network-id 10
+ ip nhrp nhs 192.168.1.3
+ tunnel source 100.1.2.2
+ tunnel mode gre multipoint
+ tunnel key 1984
+ tunnel protection ipsec profile R2toDMVPN
+end
+
+###R4
+R4#show ip interface brief 
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet2       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet3       unassigned      YES NVRAM  administratively down down    
+GigabitEthernet4       100.1.4.2       YES NVRAM  up                    up      
+Loopback1              10.1.4.1        YES NVRAM  up                    up      
+Tunnel1                192.168.1.4     YES NVRAM  up                    up  
+
+crypto isakmp policy 10
+ encryption 3des
+ hash md5
+ authentication pre-share
+ group 2
+crypto isakmp key 0x0 address 0.0.0.0        
+crypto ipsec transform-set R4toDMVPN esp-3des esp-sha-hmac 
+ mode transport
+crypto ipsec profile R4toDMVPN
+ set transform-set R4toDMVPN 
+interface Tunnel1
+ ip address 192.168.1.4 255.255.255.0
+ no ip redirects
+ ip nhrp authentication cisco
+ ip nhrp map 192.168.1.3 100.1.3.2
+ ip nhrp map multicast 100.1.3.2
+ ip nhrp network-id 10
+ ip nhrp nhs 192.168.1.3
+ tunnel source 100.1.4.2
+ tunnel mode gre multipoint
+ tunnel key 1984
+ tunnel protection ipsec profile R4toDMVPN
+end
+
+
+
+
+
+
+
+
